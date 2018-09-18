@@ -1,0 +1,20 @@
+#!/bin/bash
+mkdir data
+mkdir data/shard_1_0
+mkdir data/shard_1_1
+mkdir data/shard_1_2
+mkdir data/shard_2_0
+mkdir data/shard_2_1
+mkdir data/shard_2_2
+mkdir data/shard_3_0
+mkdir data/shard_3_1
+mkdir data/shard_3_2
+mkdir data/shard_4_0
+mkdir data/shard_4_1
+mkdir data/shard_4_2
+
+mkdir data/cfg0
+mkdir data/cfg1
+mkdir data/cfg2
+
+mkdir logs

@@ -1,0 +1,109 @@
+#!/bin/bash
+
+# move to the directory mycluster or something like that.
+
+# config servers
+start /b mongod --configsvr --replSet configReplSet --dbpath /mongo/data/cfg0 --port 26050 --logpath /mongo/logs/log.cfg0 --logappend
+start /b mongod --configsvr --replSet configReplSet --dbpath /mongo/data/cfg1 --port 26051 --logpath /mongo/logs/log.cfg1 --logappend
+start /b mongod --configsvr --replSet configReplSet --dbpath /mongo/data/cfg2 --port 26052 --logpath /mongo/logs/log.cfg2 --logappend
+
+# shard servers
+start /b mongod --shardsvr --replSet shard_1 --dbpath /mongo/data/shard_1_0 --logpath /mongo/logs/log.shard_1_0 --port 27000 --logappend --smallfiles --oplogSize 50
+start /b mongod --shardsvr --replSet shard_1 --dbpath /mongo/data/shard_1_1 --logpath /mongo/logs/log.shard_1_1 --port 27001 --logappend --smallfiles --oplogSize 50
+start /b mongod --shardsvr --replSet shard_1 --dbpath /mongo/data/shard_1_2 --logpath /mongo/logs/log.shard_1_2 --port 27002 --logappend --smallfiles --oplogSize 50
+start /b mongod --shardsvr --replSet shard_2 --dbpath /mongo/data/shard_2_0 --logpath /mongo/logs/log.shard_2_0 --port 27100 --logappend --smallfiles --oplogSize 50
+start /b mongod --shardsvr --replSet shard_2 --dbpath /mongo/data/shard_2_1 --logpath /mongo/logs/log.shard_2_1 --port 27101 --logappend --smallfiles --oplogSize 50
+start /b mongod --shardsvr --replSet shard_2 --dbpath /mongo/data/shard_2_2 --logpath /mongo/logs/log.shard_2_2 --port 27102 --logappend --smallfiles --oplogSize 50
+start /b mongod --shardsvr --replSet shard_3 --dbpath /mongo/data/shard_3_0 --logpath /mongo/logs/log.shard_3_0 --port 27200 --logappend --smallfiles --oplogSize 50
+start /b mongod --shardsvr --replSet shard_3 --dbpath /mongo/data/shard_3_1 --logpath /mongo/logs/log.shard_3_1 --port 27201 --logappend --smallfiles --oplogSize 50
+start /b mongod --shardsvr --replSet shard_3 --dbpath /mongo/data/shard_3_2 --logpath /mongo/logs/log.shard_3_2 --port 27202 --logappend --smallfiles --oplogSize 50
+start /b mongod --shardsvr --replSet shard_4 --dbpath /mongo/data/shard_4_0 --logpath /mongo/logs/log.shard_4_0 --port 27300 --logappend --smallfiles --oplogSize 50
+start /b mongod --shardsvr --replSet shard_4 --dbpath /mongo/data/shard_4_1 --logpath /mongo/logs/log.shard_4_1 --port 27301 --logappend --smallfiles --oplogSize 50
+start /b mongod --shardsvr --replSet shard_4 --dbpath /mongo/data/shard_4_2 --logpath /mongo/logs/log.shard_4_2 --port 27302 --logappend --smallfiles --oplogSize 50
+
+# mongos 
+start /b mongos --configdb configReplSet/localhost:26050,localhost:26051,localhost:26052 --logpath /mongo/logs/log.mongos0 --port 27017 --logappend 
+start /b mongos --configdb configReplSet/localhost:26050,localhost:26051,localhost:26052 --logpath /mongo/logs/log.mongos1 --port 26061 --logappend
+start /b mongos --configdb configReplSet/localhost:26050,localhost:26051,localhost:26052 --logpath /mongo/logs/log.mongos2 --port 26062 --logappend
+start /b mongos --configdb configReplSet/localhost:26050,localhost:26051,localhost:26052 --logpath /mongo/logs/log.mongos3 --port 26063 --logappend
+
+# config server configuration
+# mongo --port 26050
+rs.initiate( {
+   _id: "configReplSet",
+   configsvr: true,
+   members: [
+      { _id: 0, host: "localhost:26050" },
+      { _id: 1, host: "localhost:26051" },
+      { _id: 2, host: "localhost:26052" }
+   ]
+} )
+
+# Shard_1 configuration
+# mongo --port 27000
+rs.initiate( {
+   _id: "shard_1",
+   members: [
+      { _id: 0, host: "localhost:27000" },
+      { _id: 1, host: "localhost:27001" },
+      { _id: 2, host: "localhost:27002" }
+   ]
+} )
+
+# Shard_2 configuration
+# mongo --port 27100
+rs.initiate( {
+   _id: "shard_2",
+   members: [
+      { _id: 0, host: "localhost:27100" },
+      { _id: 1, host: "localhost:27101" },
+      { _id: 2, host: "localhost:27102" }
+   ]
+} )
+
+# Shard_3 configuration
+# mongo --port 27200
+rs.initiate( {
+   _id: "shard_3",
+   members: [
+      { _id: 0, host: "localhost:27200" },
+      { _id: 1, host: "localhost:27201" },
+      { _id: 2, host: "localhost:27202" }
+   ]
+} )
+
+# Shard_4 configuration
+# mongo --port 27300
+rs.initiate( {
+   _id: "shard_4",
+   members: [
+      { _id: 0, host: "localhost:27300" },
+      { _id: 1, host: "localhost:27301" },
+      { _id: 2, host: "localhost:27302" }
+   ]
+} )
+
+# Add the initial Shard. Connect to mongos and do it.
+# mongo --port 27017
+sh.addShard( "shard_1/localhost:27000,localhost:27001,localhost:27002" )
+sh.addShard( "shard_2/localhost:27100,localhost:27101,localhost:27102" )
+sh.addShard( "shard_3/localhost:27200,localhost:27201,localhost:27202" )
+sh.addShard( "shard_4/localhost:27300,localhost:27301,localhost:27302" )
+
+#
+mongodump --host mngdb-ebf-lt-01.cisco.com --port 27048 --user userrole_user --pass mongo123 --db userrole_db --collection final_user_contract_sl --out /home/centos/mongodb/dump/
+# import data to mongos
+mongoimport --host localhost --port 27017 --db eb --collection user_contract user-contract.json
+
+#
+bsondump final_user_contract_sl.bson > user_contract.json
+
+# connect to mongos
+# mongo --port 27017
+sh.enableSharding("eb");
+
+# create index
+db.user_contract.ensureIndex( {"ccoUserId": "hashed"});
+
+# add collection to the shard.
+sh.shardCollection("eb.user_contract" , { "ccoUserId" : "hashed" });
